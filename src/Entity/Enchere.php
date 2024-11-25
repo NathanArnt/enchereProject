@@ -40,6 +40,9 @@ class Enchere
     #[ORM\OneToMany(targetEntity: Participation::class, mappedBy: 'laEnchere')]
     private Collection $lesParticipations;
 
+    #[ORM\OneToOne(mappedBy: 'laEnchere', cascade: ['persist', 'remove'])]
+    private ?Produit $leProduit = null;
+
     public function __construct()
     {
         $this->lesParticipations = new ArrayCollection();
@@ -146,6 +149,28 @@ class Enchere
                 $lesParticipation->setLaEnchere(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getLeProduit(): ?Produit
+    {
+        return $this->leProduit;
+    }
+
+    public function setLeProduit(?Produit $leProduit): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($leProduit === null && $this->leProduit !== null) {
+            $this->leProduit->setLaEnchere(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($leProduit !== null && $leProduit->getLaEnchere() !== $this) {
+            $leProduit->setLaEnchere($this);
+        }
+
+        $this->leProduit = $leProduit;
 
         return $this;
     }

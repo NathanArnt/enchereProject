@@ -3,6 +3,6 @@ import './styles/app.css';
 
 import { createApp } from 'vue';
 
-import ProduitsApp from './components/Produits.vue';
+import EnchereApp from './components/Enchere.vue';
 
-createApp(ProduitsApp).mount('#Produits-app');
+createApp(EnchereApp).mount('#Encheres-app');
