@@ -22,7 +22,7 @@ class Produit
     #[ORM\Column]
     private ?float $prixPlancher = null;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'leProduit', cascade: ['persist', 'remove'])]
     private ?Enchere $laEnchere = null;
 
     public function getId(): ?int
@@ -77,4 +77,5 @@ class Produit
 
         return $this;
     }
+
 }

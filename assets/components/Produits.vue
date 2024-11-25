@@ -5,13 +5,15 @@
         <div class="table-header">
           <div>ID</div>
           <div>Libelle</div>
+          <div>Description</div>
           <div>Prix Plancher</div>
          
         </div>
         <div class="table-row" v-for="produit in produits" :key="produit.id">
           <div>{{ produit.id }}</div>
           <div>{{ produit.libelle }}</div>
-          <div>{{ ville.prixPlancher }}</div>
+          <div>{{ produit.description }}</div>
+          <div>{{ produit.prixPlancher }}</div>
         </div>
       </div>
     </div>
