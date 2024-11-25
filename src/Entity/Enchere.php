@@ -19,9 +19,6 @@ class Enchere
     #[ORM\Column(length: 255)]
     private ?string $titre = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $description = null;
-
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateHeureDebut = null;
 
@@ -40,8 +37,11 @@ class Enchere
     #[ORM\OneToMany(targetEntity: Participation::class, mappedBy: 'laEnchere')]
     private Collection $lesParticipations;
 
-    #[ORM\OneToOne(mappedBy: 'laEnchere', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'laEnchere', cascade: ['persist', 'remove'])]
     private ?Produit $leProduit = null;
+
+
+
 
     public function __construct()
     {
@@ -65,17 +65,6 @@ class Enchere
         return $this;
     }
 
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(string $description): static
-    {
-        $this->description = $description;
-
-        return $this;
-    }
 
     public function getDateHeureDebut(): ?\DateTimeInterface
     {
@@ -160,19 +149,10 @@ class Enchere
 
     public function setLeProduit(?Produit $leProduit): static
     {
-        // unset the owning side of the relation if necessary
-        if ($leProduit === null && $this->leProduit !== null) {
-            $this->leProduit->setLaEnchere(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($leProduit !== null && $leProduit->getLaEnchere() !== $this) {
-            $leProduit->setLaEnchere($this);
-        }
-
         $this->leProduit = $leProduit;
 
         return $this;
     }
+
 
 }

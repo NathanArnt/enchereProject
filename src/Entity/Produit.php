@@ -22,8 +22,9 @@ class Produit
     #[ORM\Column]
     private ?float $prixPlancher = null;
 
-    #[ORM\OneToOne(inversedBy: 'leProduit', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'leProduit', cascade: ['persist', 'remove'])]
     private ?Enchere $laEnchere = null;
+
 
     public function getId(): ?int
     {
@@ -73,9 +74,20 @@ class Produit
 
     public function setLaEnchere(?Enchere $laEnchere): static
     {
+        // unset the owning side of the relation if necessary
+        if ($laEnchere === null && $this->laEnchere !== null) {
+            $this->laEnchere->setLeProduit(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($laEnchere !== null && $laEnchere->getLeProduit() !== $this) {
+            $laEnchere->setLeProduit($this);
+        }
+
         $this->laEnchere = $laEnchere;
 
         return $this;
     }
+
 
 }
