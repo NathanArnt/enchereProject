@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -7,6 +8,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use App\Repository\ProduitRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Produit;
+use App\Entity\Enchere;
 use App\Repository\EnchereRepository;
 use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +23,7 @@ class ApiController extends AbstractController
             'controller_name' => 'ApiController',
         ]);
     }
-    
+
     #[Route('/api/produits', name: 'app_api_produits', methods: ['GET'])]
     public function getProduits(Request $request, ProduitRepository $produitRepository): Response
     {
@@ -80,7 +82,7 @@ class ApiController extends AbstractController
         return new JsonResponse(['status' => 'Produit supprimé avec succès']);
     }
 
-    #[Route('/api/encheres', name: 'api_encheres')]
+    #[Route('/api/encheres', name: 'api_encheres', methods: ['GET'])]
     public function getEncheres(EnchereRepository $enchereRepository): JsonResponse
     {
         $encheres = $enchereRepository->findAll();
@@ -99,5 +101,70 @@ class ApiController extends AbstractController
         }, $encheres);
 
         return new JsonResponse($data);
+    }
+
+    #[Route('/api/encheres/add', name: 'app_api_add_enchere', methods: ['POST'])]
+    public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+    
+        $enchere = new Enchere();
+        $enchere->setTitre($data['titre']);
+        $enchere->setDateHeureDebut(new \DateTime($data['dateHeureDebut']));
+        $enchere->setDateHeureFin(new \DateTime($data['dateHeureFin']));
+        $enchere->setPrixDebut($data['prixDebut']);
+        $enchere->setStatut($data['statut']);
+    
+        $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
+        if ($produit) {
+            $enchere->setLeProduit($produit);
+        }
+    
+        $entityManager->persist($enchere);
+        $entityManager->flush();
+    
+        return new JsonResponse(['status' => 'Enchère ajoutée avec succès'], Response::HTTP_CREATED);
+    }
+    
+
+    #[Route('/api/encheres/update/{id}', name: 'app_api_update_enchere', methods: ['PUT'])]
+    public function updateEnchere(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+    
+        if (!$enchere) {
+            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+        }
+    
+        $data = json_decode($request->getContent(), true);
+        $enchere->setTitre($data['titre']);
+        $enchere->setDateHeureDebut(new \DateTime($data['dateHeureDebut']));
+        $enchere->setDateHeureFin(new \DateTime($data['dateHeureFin']));
+        $enchere->setPrixDebut($data['prixDebut']);
+        $enchere->setStatut($data['statut']);
+    
+        $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
+        if ($produit) {
+            $enchere->setLeProduit($produit);
+        }
+    
+        $entityManager->flush();
+    
+        return new JsonResponse(['status' => 'Enchère mise à jour avec succès']);
+    }
+    
+    #[Route('/api/encheres/delete/{id}', name: 'app_api_delete_enchere', methods: ['DELETE'])]
+    public function deleteEnchere($id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+
+        if (!$enchere) {
+            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+        }
+
+        $entityManager->remove($enchere);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Enchère supprimée avec succès']);
     }
 }
