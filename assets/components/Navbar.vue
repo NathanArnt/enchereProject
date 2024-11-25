@@ -3,6 +3,8 @@
       <ul>
         <li><a href="/admin"><i class="fas fa-home"></i> Accueil</a></li>
         <li><a href="/admin/produits"><i class="fas fa-box"></i> Produits</a></li>
+        <li><a href="/admin/encheres"><i class="fas fa-box"></i> Enchères</a></li>
+
         <!-- Ajoutez d'autres éléments de navigation ici -->
       </ul>
     </nav>

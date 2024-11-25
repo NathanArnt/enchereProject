@@ -28,4 +28,13 @@ class AdminController extends AbstractController
             'controller_name' => 'AdminController',
         ]);
     }
+
+    #[Route('/admin/encheres', name: 'app_admin_encheres')]
+    public function getEncheres(): Response
+    {
+
+        return $this->render('admin/encheres.html.twig', [
+            'controller_name' => 'AdminController',
+        ]);
+    }
 }

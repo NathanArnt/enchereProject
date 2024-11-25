@@ -1,20 +1,26 @@
 <template>
     <div>
       <Navbar />
-      <div class="produits-app">
-        <h1>Tableau des Produits</h1>
+      <div class="encheres-app">
+        <h1>Tableau des Enchères</h1>
         <div class="table-container">
           <div class="table-header">
             <div>ID</div>
-            <div>Libelle</div>
+            <div>Titre</div>
             <div>Description</div>
-            <div>Prix Plancher</div>
+            <div>Date de Début</div>
+            <div>Date de Fin</div>
+            <div>Prix de Début</div>
+            <div>Statut</div>
           </div>
-          <div class="table-row" v-for="produit in produits" :key="produit.id">
-            <div>{{ produit.id }}</div>
-            <div>{{ produit.libelle }}</div>
-            <div>{{ produit.description }}</div>
-            <div>{{ produit.prixPlancher }}</div>
+          <div class="table-row" v-for="enchere in encheres" :key="enchere.id">
+            <div>{{ enchere.id }}</div>
+            <div>{{ enchere.titre }}</div>
+            <div>{{ enchere.description }}</div>
+            <div>{{ enchere.dateHeureDebut }}</div>
+            <div>{{ enchere.dateHeureFin }}</div>
+            <div>{{ enchere.prixDebut }}</div>
+            <div>{{ enchere.statut }}</div>
           </div>
         </div>
       </div>
@@ -26,38 +32,38 @@
   import Navbar from './Navbar.vue';
   
   export default {
-    name: 'ProduitsApp',
+    name: 'EncheresApp',
     components: {
       Navbar,
     },
     setup() {
-      const produits = ref([]);
+      const encheres = ref([]);
   
-      const fetchProduits = async () => {
+      const fetchEncheres = async () => {
         try {
-          const response = await fetch('/api/produits');
+          const response = await fetch('/api/encheres'); // Assurez-vous que cette route est correcte
           if (!response.ok) {
-            throw new Error('Erreur lors du chargement des produits');
+            throw new Error('Erreur lors du chargement des enchères');
           }
-          produits.value = await response.json();
+          encheres.value = await response.json();
         } catch (error) {
           console.error(error);
         }
       };
   
       onMounted(() => {
-        fetchProduits();
+        fetchEncheres();
       });
   
       return {
-        produits,
+        encheres,
       };
     },
   };
   </script>
   
   <style scoped>
-  .produits-app {
+  .encheres-app {
     max-width: 1000px;
     margin: 2rem auto;
     padding: 1rem;
@@ -66,7 +72,7 @@
     border-radius: 10px;
   }
   
-  .produits-app h1 {
+  .encheres-app h1 {
     text-align: center;
     margin-bottom: 1.5rem;
     color: #34495e;
@@ -74,7 +80,7 @@
   
   .table-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 10px;
   }
   
