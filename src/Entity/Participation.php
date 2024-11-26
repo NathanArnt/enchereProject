@@ -19,12 +19,11 @@ class Participation
     #[ORM\Column]
     private ?float $budgetMaximum = null;
 
+    #[ORM\ManyToOne(inversedBy: 'LesParticipations')]
+    private ?Enchere $laEnchere = null;
 
     #[ORM\ManyToOne(inversedBy: 'lesParticipations')]
     private ?User $leUser = null;
-
-    #[ORM\ManyToOne(inversedBy: 'lesParticipations')]
-    private ?Enchere $laEnchere = null;
 
     public function getId(): ?int
     {
@@ -54,18 +53,6 @@ class Participation
 
         return $this;
     }
-    
-    public function getLeUser(): ?User
-    {
-        return $this->leUser;
-    }
-
-    public function setLeUser(?User $leUser): static
-    {
-        $this->leUser = $leUser;
-
-        return $this;
-    }
 
     public function getLaEnchere(): ?Enchere
     {
@@ -75,6 +62,18 @@ class Participation
     public function setLaEnchere(?Enchere $laEnchere): static
     {
         $this->laEnchere = $laEnchere;
+
+        return $this;
+    }
+
+    public function getLeUser(): ?User
+    {
+        return $this->leUser;
+    }
+
+    public function setLeUser(?User $leUser): static
+    {
+        $this->leUser = $leUser;
 
         return $this;
     }

@@ -1,18 +1,20 @@
 <template>
   <div class="homePage">
     <div class="enchereContainer">
-      <div class="card">
-        <div class="card-body" v-for="enchere in encheres" :key="enchere.id">
+      <div class="card" v-for="enchere in encheres" :key="enchere.id">
+        <div class="card-body">
           <div class="img">
             <img src="" alt="img-produit">
           </div>
           <div class="body">
-            <h1>{{ enchere.titre }}</h1>
-            <div>{{ enchere.description }}</div>
-            <div>Statut : {{ enchere.statut }}</div>
-            <div>Prix : {{ enchere.prixDebut }}</div>
+            <div class="head">
+              <h1>{{ enchere.leProduit.libelle }}</h1>
+              <div>{{ enchere.prixDebut }} €</div>
+            </div>
+            <div class="desc">Description : {{ enchere.leProduit.description }}</div>
+            <div>{{ enchere.statut }}</div>
+            <button @click="selectEnchere(enchere)">Enchérir</button>
           </div>
-            
         </div>
       </div>
     </div>
@@ -26,7 +28,10 @@
     name: 'EnchereApp',
     setup() {
       const encheres = ref([]);
-  
+
+      const selectEnchere = (enchere) => {
+        
+      }
       // Fonction pour récupérer les données des villes
       const fetchEnchere = async () => {
         try {
@@ -46,13 +51,14 @@
   
       return {
         encheres,
+        selectEnchere,
       };
     },
   };
   </script>
   
-<style>
-  .homePage {
+<style scoped>
+.homePage {
     height: 100vh;
     background-color: #fafafa;
   }
@@ -68,10 +74,25 @@
     border-radius: 10px;
     height: 200px;
     width: 230px;
+    background-color: black;
   }
   .homePage .enchereContainer .card .card-body .body {
     border-top: 1px solid rgb(27, 27, 27);
     padding: 10px;
+  }
+  .homePage .enchereContainer .card .card-body .body button {
+    border-radius: 15px;
+    padding: 10px;
+    background: none;
+    border: 2px solid rgb(27, 27, 27);
+  }
+  .homePage .enchereContainer .card .card-body .body .desc {
+    padding: 5px 0;
+  }
+  .homePage .enchereContainer .card .card-body .body .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 </style>
   

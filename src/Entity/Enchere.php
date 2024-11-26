@@ -19,9 +19,6 @@ class Enchere
     #[ORM\Column(length: 255)]
     private ?string $titre = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $description = null;
-
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $dateHeureDebut = null;
 
@@ -34,18 +31,18 @@ class Enchere
     #[ORM\Column(length: 255)]
     private ?string $statut = null;
 
+    #[ORM\OneToOne(inversedBy: 'laEnchere', cascade: ['persist', 'remove'])]
+    private ?Produit $leProduit = null;
+
     /**
      * @var Collection<int, Participation>
      */
     #[ORM\OneToMany(targetEntity: Participation::class, mappedBy: 'laEnchere')]
-    private Collection $lesParticipations;
-
-    #[ORM\OneToOne(mappedBy: 'laEnchere', cascade: ['persist', 'remove'])]
-    private ?Produit $leProduit = null;
+    private Collection $LesParticipations;
 
     public function __construct()
     {
-        $this->lesParticipations = new ArrayCollection();
+        $this->LesParticipations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -61,18 +58,6 @@ class Enchere
     public function setTitre(string $titre): static
     {
         $this->titre = $titre;
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(string $description): static
-    {
-        $this->description = $description;
 
         return $this;
     }
@@ -123,18 +108,30 @@ class Enchere
         return $this;
     }
 
+    public function getLeProduit(): ?Produit
+    {
+        return $this->leProduit;
+    }
+
+    public function setLeProduit(?Produit $leProduit): static
+    {
+        $this->leProduit = $leProduit;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Participation>
      */
     public function getLesParticipations(): Collection
     {
-        return $this->lesParticipations;
+        return $this->LesParticipations;
     }
 
     public function addLesParticipation(Participation $lesParticipation): static
     {
-        if (!$this->lesParticipations->contains($lesParticipation)) {
-            $this->lesParticipations->add($lesParticipation);
+        if (!$this->LesParticipations->contains($lesParticipation)) {
+            $this->LesParticipations->add($lesParticipation);
             $lesParticipation->setLaEnchere($this);
         }
 
@@ -143,7 +140,7 @@ class Enchere
 
     public function removeLesParticipation(Participation $lesParticipation): static
     {
-        if ($this->lesParticipations->removeElement($lesParticipation)) {
+        if ($this->LesParticipations->removeElement($lesParticipation)) {
             // set the owning side to null (unless already changed)
             if ($lesParticipation->getLaEnchere() === $this) {
                 $lesParticipation->setLaEnchere(null);
@@ -152,27 +149,4 @@ class Enchere
 
         return $this;
     }
-
-    public function getLeProduit(): ?Produit
-    {
-        return $this->leProduit;
-    }
-
-    public function setLeProduit(?Produit $leProduit): static
-    {
-        // unset the owning side of the relation if necessary
-        if ($leProduit === null && $this->leProduit !== null) {
-            $this->leProduit->setLaEnchere(null);
-        }
-
-        // set the owning side of the relation if necessary
-        if ($leProduit !== null && $leProduit->getLaEnchere() !== $this) {
-            $leProduit->setLaEnchere($this);
-        }
-
-        $this->leProduit = $leProduit;
-
-        return $this;
-    }
-
 }
