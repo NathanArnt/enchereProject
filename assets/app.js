@@ -3,6 +3,8 @@ import './styles/app.css';
 
 import { createApp } from 'vue';
 
-import EnchereApp from './components/Enchere.vue';
+import ProduitsApp from './components/Produits.vue';
+import EncheresApp from './components/Encheres.vue';
 
-createApp(EnchereApp).mount('#Encheres-app');
+createApp(ProduitsApp).mount('#produits-app');
+createApp(EncheresApp).mount('#encheres-app');
