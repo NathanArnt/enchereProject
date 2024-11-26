@@ -29,4 +29,21 @@ class ApiController extends AbstractController
         return $response->GetJsonResponse($request,$produits);
         
     }
+
+    #[Route('/api/product/add', name: 'app_api_products_add')]
+    public function AddProduits(Request $request, EntityManagerInterface $entityManager ) : JsonResponse
+    {
+
+        $data = json_decode($request->getContent(), true);
+       
+       $produit = new Produit();
+       $produit->setLibelle($data['libelle']);
+       $produit->setDescription($data['description']);
+       $produit->setPrixPlancher($data['prixPlancher']);
+
+       $entityManager->persist($produit);
+       $entityManager->flush();
+       return $this->json(['message' => 'Produit créé avec succès.'], Response::HTTP_CREATED);
+    }
+
 }

@@ -10,6 +10,17 @@
           <div>Description</div>
           <div>Prix Plancher</div>
         </div>
+
+      <div class="">
+        <form @submit.prevent="submitForm">
+      <input v-model="newProduit.libelle" placeholder="Nom du produit" required>
+      <input v-model="newProduit.description" placeholder="Description" required>
+      <input v-model.number="newProduit.prixPlancher" placeholder="Prix Plancher" required>
+      <button type="submit">Ajouter</button>
+        </form>
+  </div>
+
+
         <div class="table-row" v-for="produit in produits" :key="produit.id">
           <div>{{ produit.id }}</div>
           <div>{{ produit.libelle }}</div>
@@ -30,6 +41,8 @@ export default {
   components: {
     Navbar,
   },
+
+
   setup() {
     const produits = ref([]);
 
@@ -44,6 +57,28 @@ export default {
         console.error(error);
       }
     };
+    
+    const addProduct = async () => {
+        try {
+          const response = await fetch('/api/produit/add', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newProduct.value),
+          });
+  
+          if (!response.ok) {
+            throw new Error('Erreur lors de l\'ajout du produit');
+          }
+  
+          await fetchProducts();
+          newProduit.value = { libelle: '', description: '', prix_plancher: 0 };
+        } catch (error) {
+          console.error(error);
+        }
+      };
+    
 
     onMounted(() => {
       fetchProduits();
@@ -53,6 +88,8 @@ export default {
       produits,
     };
   },
+
+  
 };
 </script>
 
