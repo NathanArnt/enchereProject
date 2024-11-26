@@ -9,7 +9,9 @@ use App\Repository\ProduitRepository;
 use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Produit;
 use App\Entity\Enchere;
+use App\Entity\Participation;
 use App\Repository\EnchereRepository;
+use App\Repository\UserRepository;
 use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -173,5 +175,28 @@ class ApiController extends AbstractController
         $response =new Utils();
         $encheres = $enchereRepository->findAll();
         return $response->GetJsonResponse($request,$encheres);
+    }
+    #[Route('/api/participation/budgetmax/add', name: 'app_api_add_participation_budget_max', methods: ['POST', 'GET' ])]
+    public function addBudgetMax(EnchereRepository $enchereRepository,Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {   
+        $data = json_decode($request->getContent(), true);
+        
+        $user= $this->getUser();
+
+        $participation = new Participation();
+
+        $participation->setLeUser( $user);
+
+        $laEnchere = $enchereRepository->find($data['laEnchere']);
+        $participation->setLaEnchere( $laEnchere);
+
+        $participation->setBudgetMaximum($data['budgetMaximum']);
+        $participation->setPrixEncheri($data['prixEncheri']);
+    
+        $entityManager->persist($participation);
+        $entityManager->flush();
+        
+        // dd($data);
+        return new JsonResponse(['status' => 'Enchère ajoutée avec succès'], Response::HTTP_CREATED);
     }
 }
