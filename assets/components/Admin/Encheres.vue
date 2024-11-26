@@ -83,6 +83,7 @@ export default {
           throw new Error('Erreur lors du chargement des enchères');
         }
         encheres.value = await response.json();
+        updateEnchereStatus();
       } catch (error) {
         console.error(error);
       }
@@ -100,33 +101,45 @@ export default {
       }
     };
 
+    const updateEnchereStatus = () => {
+      encheres.value.forEach(enchere => {
+        const now = new Date();
+        const dateDebut = new Date(enchere.dateHeureDebut);
+        const dateFin = new Date(enchere.dateHeureFin);
+
+        if (now < dateDebut) {
+          enchere.statut = 'incoming';
+        } else if (now >= dateDebut && now < dateFin) {
+          enchere.statut = 'live';
+        } else if (now >= dateFin) {
+          enchere.statut = 'over';
+        }
+      });
+    };
+
     const saveEnchere = async () => {
       try {
         let response;
-        if (currentEnchere.value.id) {
-          response = await fetch(`/api/encheres/update/${currentEnchere.value.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentEnchere.value),
-          });
+        const enchereToSave = {
+          ...currentEnchere.value,
+          dateHeureDebut: new Date(currentEnchere.value.dateHeureDebut).toISOString(),
+          dateHeureFin: new Date(currentEnchere.value.dateHeureFin).toISOString(),
+        };
 
-          if (!response.ok) {
-            throw new Error('Erreur lors de la mise à jour de l\'enchère');
-          }
-        } else {
-          response = await fetch('/api/encheres/add', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentEnchere.value),
-          });
+        // Utilisez l'URL et la méthode appropriées en fonction de l'état de l'enchère
+        const url = currentEnchere.value.id ? `/api/encheres/update/${currentEnchere.value.id}` : '/api/encheres/add';
+        const method = currentEnchere.value.id ? 'PUT' : 'POST';
 
-          if (!response.ok) {
-            throw new Error('Erreur lors de l\'ajout de l\'enchère');
-          }
+        response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(enchereToSave),
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la sauvegarde de l'enchère");
         }
 
         await fetchEncheres();
@@ -183,6 +196,7 @@ export default {
     onMounted(() => {
       fetchEncheres();
       fetchProduits();
+      setInterval(updateEnchereStatus, 60000);
     });
 
     return {
