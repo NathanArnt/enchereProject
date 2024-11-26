@@ -167,4 +167,11 @@ class ApiController extends AbstractController
 
         return new JsonResponse(['status' => 'Enchère supprimée avec succès']);
     }
+    #[Route('/api/encheresuser', name: 'app_api_encheres_user')]
+    public function getEncheresUser(Request $request, EnchereRepository $enchereRepository): Response
+    {
+        $response =new Utils();
+        $encheres = $enchereRepository->findAll();
+        return $response->GetJsonResponse($request,$encheres);
+    }
 }
