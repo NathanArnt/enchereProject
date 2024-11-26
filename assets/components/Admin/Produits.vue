@@ -38,7 +38,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import Navbar from './Navbar.vue';
+import Navbar from '../Navbar.vue';
 
 export default {
   name: 'ProduitsApp',
