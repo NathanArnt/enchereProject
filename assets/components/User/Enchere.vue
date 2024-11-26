@@ -32,10 +32,9 @@
         const selectEnchere = (enchere) => {
           
         }
-        // Fonction pour récupérer les données des villes
         const fetchEnchere = async () => {
           try {
-            const response = await fetch('/api/encheres');
+            const response = await fetch('/api/encheresuser');
             if (!response.ok) {
               throw new Error('Erreur lors du chargement des encheres');
             }
@@ -74,7 +73,6 @@
       border-radius: 10px;
       height: 200px;
       width: 230px;
-      background-color: black;
     }
     .homePage .enchereContainer .card .card-body .body {
       border-top: 1px solid rgb(27, 27, 27);

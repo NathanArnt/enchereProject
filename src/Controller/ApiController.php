@@ -103,28 +103,29 @@ class ApiController extends AbstractController
         return new JsonResponse($data);
     }
 
-    #[Route('/api/encheres/add', name: 'app_api_add_enchere', methods: ['POST'])]
-    public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-    
-        $enchere = new Enchere();
-        $enchere->setTitre($data['titre']);
-        $enchere->setDateHeureDebut(new \DateTime($data['dateHeureDebut']));
-        $enchere->setDateHeureFin(new \DateTime($data['dateHeureFin']));
-        $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($data['statut']);
-    
-        $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
-        if ($produit) {
-            $enchere->setLeProduit($produit);
-        }
-    
-        $entityManager->persist($enchere);
-        $entityManager->flush();
-    
+    #[Route('/api/encheres/add', name: 'app_api_add_enchere', methods: ['POST'])] 
+    public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse 
+    { 
+        $data = json_decode($request->getContent(), true); 
+        $enchere = new Enchere(); 
+        $enchere->setTitre($data['titre']); 
+        $dateHeureDebut = new \DateTime($data['dateHeureDebut']); 
+        $dateHeureFin = new \DateTime($data['dateHeureFin']); 
+        $enchere->setDateHeureDebut($dateHeureDebut); 
+        $enchere->setDateHeureFin($dateHeureFin); 
+        $enchere->setPrixDebut($data['prixDebut']); 
+        $enchere->setStatut($this->calculateStatus($dateHeureDebut, $dateHeureFin)); 
+        $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']); 
+        if ($produit) 
+        { 
+            $enchere->setLeProduit($produit); 
+        } 
+        $entityManager->persist($enchere); 
+        $entityManager->flush(); 
+
         return new JsonResponse(['status' => 'Enchère ajoutée avec succès'], Response::HTTP_CREATED);
     }
+
     
 
     #[Route('/api/encheres/update/{id}', name: 'app_api_update_enchere', methods: ['PUT'])]
@@ -138,11 +139,12 @@ class ApiController extends AbstractController
     
         $data = json_decode($request->getContent(), true);
         $enchere->setTitre($data['titre']);
-        $enchere->setDateHeureDebut(new \DateTime($data['dateHeureDebut']));
-        $enchere->setDateHeureFin(new \DateTime($data['dateHeureFin']));
-        $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($data['statut']);
-    
+        $dateHeureDebut = new \DateTime($data['dateHeureDebut']); 
+        $dateHeureFin = new \DateTime($data['dateHeureFin']); 
+        $enchere->setDateHeureDebut($dateHeureDebut); 
+        $enchere->setDateHeureFin($dateHeureFin); 
+        $enchere->setPrixDebut($data['prixDebut']); 
+        $enchere->setStatut($this->calculateStatus($dateHeureDebut, $dateHeureFin)); 
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
             $enchere->setLeProduit($produit);
@@ -173,5 +175,24 @@ class ApiController extends AbstractController
         $response =new Utils();
         $encheres = $enchereRepository->findAll();
         return $response->GetJsonResponse($request,$encheres);
+    }   
+
+
+    // Ajoutez cette méthode privée pour calculer le statut de l'enchère 
+    private function calculateStatus(\DateTime $dateHeureDebut, \DateTime $dateHeureFin): string 
+    { 
+        $now = new \DateTime(); 
+        if ($now < $dateHeureDebut) 
+        { 
+            return 'incoming'; 
+        } 
+        elseif ($now > $dateHeureFin) 
+        { 
+            return 'over'; 
+        } 
+        else 
+        { 
+            return 'live'; 
+        }
     }
 }

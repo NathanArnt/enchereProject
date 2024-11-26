@@ -8,7 +8,6 @@
         <DatePicker v-model="currentEnchere.dateHeureDebut" placeholder="Date de Début" :enable-time="true" required />
         <DatePicker v-model="currentEnchere.dateHeureFin" placeholder="Date de Fin" :enable-time="true" required />
         <input v-model.number="currentEnchere.prixDebut" placeholder="Prix de Début" required />
-        <input v-model="currentEnchere.statut" placeholder="Statut" required />
         <select v-model="currentEnchere.produitId" required>
           <option disabled value="">Sélectionnez un produit</option>
           <option v-for="produit in produits" :key="produit.id" :value="produit.id">
@@ -50,6 +49,7 @@
   </div>
 </template>
 
+
 <script>
 import { ref, onMounted } from 'vue';
 import Navbar from '../Navbar.vue';
@@ -71,7 +71,6 @@ export default {
       dateHeureDebut: '',
       dateHeureFin: '',
       prixDebut: 0,
-      statut: '',
       produitId: '',
     });
 
@@ -160,7 +159,6 @@ export default {
         dateHeureDebut: enchere.dateHeureDebut,
         dateHeureFin: enchere.dateHeureFin,
         prixDebut: enchere.prixDebut,
-        statut: enchere.statut,
         produitId: produits.value.find(p => p.libelle === enchere.produitLibelle)?.id || '',
       };
       isEditing.value = true;
@@ -173,7 +171,6 @@ export default {
         dateHeureDebut: '',
         dateHeureFin: '',
         prixDebut: 0,
-        statut: '',
         produitId: '',
       };
       isEditing.value = false;
@@ -201,6 +198,7 @@ export default {
   },
 };
 </script>
+
 
 
 <style scoped>
