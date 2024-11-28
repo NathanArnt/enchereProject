@@ -110,13 +110,16 @@ class ApiController extends AbstractController
 
         $enchere = new Enchere();
         $enchere->setTitre($data['titre']);
-        // Utilisez le fuseau horaire par défaut du serveur ou un spécifique comme 'Europe/Paris'
-        $dateHeureDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
-        $dateHeureFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
-        $enchere->setDateHeureDebut($dateHeureDebut);
-        $enchere->setDateHeureFin($dateHeureFin);
+        // Conversion explicite en UTC+1
+        $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
+        $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureDebut($dateDebut);
+
+        $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
+        $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureFin($dateFin);        
         $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($this->calculateStatus($dateHeureDebut, $dateHeureFin));
+        $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
 
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
@@ -140,12 +143,16 @@ class ApiController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
         $enchere->setTitre($data['titre']);
-        $dateHeureDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
-        $dateHeureFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
-        $enchere->setDateHeureDebut($dateHeureDebut);
-        $enchere->setDateHeureFin($dateHeureFin);
+        $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
+        $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureDebut($dateDebut);
+
+        $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
+        $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureFin($dateFin);        
         $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($this->calculateStatus($dateHeureDebut, $dateHeureFin));
+        $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
+
 
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
@@ -156,6 +163,24 @@ class ApiController extends AbstractController
 
         return new JsonResponse(['status' => 'Enchère mise à jour avec succès']);
     }
+
+    #[Route('/api/encheres/update-status/{id}', name: 'app_api_update_enchere_status', methods: ['PUT'])]
+    public function updateEnchereStatus(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+
+        if (!$enchere) {
+            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $enchere->setStatut($data['statut']);
+
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Statut de l\'enchère mis à jour avec succès']);
+    }
+
     
     #[Route('/api/encheres/delete/{id}', name: 'app_api_delete_enchere', methods: ['DELETE'])]
     public function deleteEnchere($id, EntityManagerInterface $entityManager): JsonResponse

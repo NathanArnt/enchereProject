@@ -101,21 +101,39 @@ export default {
       }
     };
 
-    const updateEnchereStatus = () => {
-      encheres.value.forEach(enchere => {
+    const updateEnchereStatus = async () => {
+      const updatedEncheres = encheres.value.map(async (enchere) => {
         const now = new Date();
         const dateDebut = new Date(enchere.dateHeureDebut);
         const dateFin = new Date(enchere.dateHeureFin);
 
+        let newStatus;
         if (now < dateDebut) {
-          enchere.statut = 'incoming';
+          newStatus = 'incoming';
         } else if (now >= dateDebut && now < dateFin) {
-          enchere.statut = 'live';
+          newStatus = 'live';
         } else if (now >= dateFin) {
-          enchere.statut = 'over';
+          newStatus = 'over';
         }
+
+        if (enchere.statut !== newStatus) {
+          enchere.statut = newStatus;
+
+          // Envoyer la mise à jour du statut au backend
+          await fetch(`/api/encheres/update-status/${enchere.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ statut: newStatus }),
+          });
+        }
+        return enchere;
       });
+
+      encheres.value = await Promise.all(updatedEncheres);
     };
+
 
     const saveEnchere = async () => {
       try {
