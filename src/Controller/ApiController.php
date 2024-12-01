@@ -109,10 +109,9 @@ class ApiController extends AbstractController
     public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-    
+
         $enchere = new Enchere();
         $enchere->setTitre($data['titre']);
-
         // Conversion explicite en UTC+1
         $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
         $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
@@ -120,48 +119,69 @@ class ApiController extends AbstractController
 
         $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
         $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
-        $enchere->setDateHeureFin($dateFin);
-
         $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($data['statut']);
-    
+        $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
+
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
             $enchere->setLeProduit($produit);
         }
-    
+
         $entityManager->persist($enchere);
         $entityManager->flush();
-    
+
         return new JsonResponse(['status' => 'Enchère ajoutée avec succès'], Response::HTTP_CREATED);
     }
-    
 
     #[Route('/api/encheres/update/{id}', name: 'app_api_update_enchere', methods: ['PUT'])]
     public function updateEnchere(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
     {
         $enchere = $entityManager->getRepository(Enchere::class)->find($id);
-    
+
         if (!$enchere) {
             return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
         }
-    
+
         $data = json_decode($request->getContent(), true);
         $enchere->setTitre($data['titre']);
-        $enchere->setDateHeureDebut(new \DateTime($data['dateHeureDebut']));
-        $enchere->setDateHeureFin(new \DateTime($data['dateHeureFin']));
+        $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
+        $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureDebut($dateDebut);
+
+        $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
+        $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureFin($dateFin);        
         $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($data['statut']);
-    
+        $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
+
+
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
             $enchere->setLeProduit($produit);
         }
-    
+
         $entityManager->flush();
-    
+
         return new JsonResponse(['status' => 'Enchère mise à jour avec succès']);
     }
+
+    #[Route('/api/encheres/update-status/{id}', name: 'app_api_update_enchere_status', methods: ['PUT'])]
+    public function updateEnchereStatus(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+
+        if (!$enchere) {
+            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $enchere->setStatut($data['statut']);
+
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Statut de l\'enchère mis à jour avec succès']);
+    }
+
     
     #[Route('/api/encheres/delete/{id}', name: 'app_api_delete_enchere', methods: ['DELETE'])]
     public function deleteEnchere($id, EntityManagerInterface $entityManager): JsonResponse
@@ -183,6 +203,25 @@ class ApiController extends AbstractController
         $response =new Utils();
         $encheres = $enchereRepository->findAll();
         return $response->GetJsonResponse($request,$encheres);
+    }   
+
+
+    // Ajoutez cette méthode privée pour calculer le statut de l'enchère 
+    private function calculateStatus(\DateTime $dateHeureDebut, \DateTime $dateHeureFin): string 
+    { 
+        $now = new \DateTime(); 
+        if ($now < $dateHeureDebut) 
+        { 
+            return 'incoming'; 
+        } 
+        elseif ($now > $dateHeureFin) 
+        { 
+            return 'over'; 
+        } 
+        else 
+        { 
+            return 'live'; 
+        }
     }
     #[Route('/api/participation/budgetmax/add', name: 'app_api_add_participation_budget_max', methods: ['POST', 'GET'])]
     public function addBudgetMax(

@@ -73,26 +73,6 @@ export default {
           console.error("Prix invalide :", updatePrix.value);
           return;
         }
-
-        console.log("Données prêtes pour l'API :", {
-          prixEncheri: updatePrix.value,
-          participationId: participationId.value,
-        });
-
-        // Envoi des données à l'API
-        const response = await fetch(`/api/participation/update/${participationId.value}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ prixEncheri: updatePrix.value }), // Envoi structuré
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Erreur de l'API :", errorData);
-          alert(`Erreur API : ${errorData.error || "Erreur inconnue"}`);
-          return;
         }
 
         const result = await response.json();

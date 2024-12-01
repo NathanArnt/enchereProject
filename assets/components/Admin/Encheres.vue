@@ -8,7 +8,6 @@
         <DatePicker v-model="currentEnchere.dateHeureDebut" placeholder="Date de Début" :enable-time="true" required />
         <DatePicker v-model="currentEnchere.dateHeureFin" placeholder="Date de Fin" :enable-time="true" required />
         <input v-model.number="currentEnchere.prixDebut" placeholder="Prix de Début" required />
-        <input v-model="currentEnchere.statut" placeholder="Statut" required />
         <select v-model="currentEnchere.produitId" required>
           <option disabled value="">Sélectionnez un produit</option>
           <option v-for="produit in produits" :key="produit.id" :value="produit.id">
@@ -71,7 +70,6 @@ export default {
       dateHeureDebut: '',
       dateHeureFin: '',
       prixDebut: 0,
-      statut: '',
       produitId: '',
     });
 
@@ -101,36 +99,44 @@ export default {
       }
     };
 
+    const fetchUpdatedEncheres = async () => {
+      try {
+        const response = await fetch('/api/encheres');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la mise à jour des enchères');
+        }
+        const updatedEncheres = await response.json();
+        encheres.value = updatedEncheres;
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     const saveEnchere = async () => {
       try {
         let response;
-        if (currentEnchere.value.id) {
-          response = await fetch(`/api/encheres/update/${currentEnchere.value.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentEnchere.value),
-          });
+        const enchereToSave = {
+          ...currentEnchere.value,
+          dateHeureDebut: new Date(currentEnchere.value.dateHeureDebut).toISOString(),
+          dateHeureFin: new Date(currentEnchere.value.dateHeureFin).toISOString(),
+        };
 
-          if (!response.ok) {
-            throw new Error('Erreur lors de la mise à jour de l\'enchère');
-          }
-        } else {
-          response = await fetch('/api/encheres/add', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentEnchere.value),
-          });
+        const url = currentEnchere.value.id ? `/api/encheres/update/${currentEnchere.value.id}` : '/api/encheres/add';
+        const method = currentEnchere.value.id ? 'PUT' : 'POST';
 
-          if (!response.ok) {
-            throw new Error('Erreur lors de l\'ajout de l\'enchère');
-          }
+        response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(enchereToSave),
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la sauvegarde de l'enchère");
         }
 
-        await fetchEncheres();
+        await fetchUpdatedEncheres();
         resetForm();
       } catch (error) {
         console.error(error);
@@ -147,7 +153,7 @@ export default {
           throw new Error('Erreur lors de la suppression de l\'enchère');
         }
 
-        await fetchEncheres();
+        await fetchUpdatedEncheres();
       } catch (error) {
         console.error(error);
       }
@@ -160,8 +166,7 @@ export default {
         dateHeureDebut: enchere.dateHeureDebut,
         dateHeureFin: enchere.dateHeureFin,
         prixDebut: enchere.prixDebut,
-        statut: enchere.statut,
-        produitId: produits.value.find(p => p.libelle === enchere.produitLibelle)?.id || '',
+        produitId: produits.value.find(p => p.id === enchere.produitId)?.id || '',
       };
       isEditing.value = true;
     };
@@ -173,7 +178,6 @@ export default {
         dateHeureDebut: '',
         dateHeureFin: '',
         prixDebut: 0,
-        statut: '',
         produitId: '',
       };
       isEditing.value = false;
@@ -186,6 +190,7 @@ export default {
     onMounted(() => {
       fetchEncheres();
       fetchProduits();
+      setInterval(fetchUpdatedEncheres, 10000); // Mettre à jour toutes les 10 secondes
     });
 
     return {
@@ -201,6 +206,10 @@ export default {
   },
 };
 </script>
+
+
+
+
 
 
 <style scoped>
