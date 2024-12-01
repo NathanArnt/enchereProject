@@ -49,7 +49,6 @@
   </div>
 </template>
 
-
 <script>
 import { ref, onMounted } from 'vue';
 import Navbar from '../Navbar.vue';
@@ -83,7 +82,6 @@ export default {
           throw new Error('Erreur lors du chargement des enchères');
         }
         encheres.value = await response.json();
-        updateEnchereStatus();
       } catch (error) {
         console.error(error);
       }
@@ -101,39 +99,18 @@ export default {
       }
     };
 
-    const updateEnchereStatus = async () => {
-      const updatedEncheres = encheres.value.map(async (enchere) => {
-        const now = new Date();
-        const dateDebut = new Date(enchere.dateHeureDebut);
-        const dateFin = new Date(enchere.dateHeureFin);
-
-        let newStatus;
-        if (now < dateDebut) {
-          newStatus = 'incoming';
-        } else if (now >= dateDebut && now < dateFin) {
-          newStatus = 'live';
-        } else if (now >= dateFin) {
-          newStatus = 'over';
+    const fetchUpdatedEncheres = async () => {
+      try {
+        const response = await fetch('/api/encheres');
+        if (!response.ok) {
+          throw new Error('Erreur lors de la mise à jour des enchères');
         }
-
-        if (enchere.statut !== newStatus) {
-          enchere.statut = newStatus;
-
-          // Envoyer la mise à jour du statut au backend
-          await fetch(`/api/encheres/update-status/${enchere.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ statut: newStatus }),
-          });
-        }
-        return enchere;
-      });
-
-      encheres.value = await Promise.all(updatedEncheres);
+        const updatedEncheres = await response.json();
+        encheres.value = updatedEncheres;
+      } catch (error) {
+        console.error(error);
+      }
     };
-
 
     const saveEnchere = async () => {
       try {
@@ -144,7 +121,6 @@ export default {
           dateHeureFin: new Date(currentEnchere.value.dateHeureFin).toISOString(),
         };
 
-        // Utilisez l'URL et la méthode appropriées en fonction de l'état de l'enchère
         const url = currentEnchere.value.id ? `/api/encheres/update/${currentEnchere.value.id}` : '/api/encheres/add';
         const method = currentEnchere.value.id ? 'PUT' : 'POST';
 
@@ -160,7 +136,7 @@ export default {
           throw new Error("Erreur lors de la sauvegarde de l'enchère");
         }
 
-        await fetchEncheres();
+        await fetchUpdatedEncheres();
         resetForm();
       } catch (error) {
         console.error(error);
@@ -177,7 +153,7 @@ export default {
           throw new Error('Erreur lors de la suppression de l\'enchère');
         }
 
-        await fetchEncheres();
+        await fetchUpdatedEncheres();
       } catch (error) {
         console.error(error);
       }
@@ -190,7 +166,7 @@ export default {
         dateHeureDebut: enchere.dateHeureDebut,
         dateHeureFin: enchere.dateHeureFin,
         prixDebut: enchere.prixDebut,
-        produitId: produits.value.find(p => p.libelle === enchere.produitLibelle)?.id || '',
+        produitId: produits.value.find(p => p.id === enchere.produitId)?.id || '',
       };
       isEditing.value = true;
     };
@@ -214,7 +190,7 @@ export default {
     onMounted(() => {
       fetchEncheres();
       fetchProduits();
-      setInterval(updateEnchereStatus, 60000);
+      setInterval(fetchUpdatedEncheres, 10000); // Mettre à jour toutes les 10 secondes
     });
 
     return {
@@ -230,6 +206,9 @@ export default {
   },
 };
 </script>
+
+
+
 
 
 
