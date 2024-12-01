@@ -61,6 +61,7 @@
         } catch (error) {
           console.error(error);
         }
+
       };
   
       // Ajouter le budget maximum
@@ -80,6 +81,7 @@
   
           if (!response.ok) {
             throw new Error("Erreur lors de l'ajout du budget max");
+
           }
   
           alert("Budget maximum ajouté avec succès !");
