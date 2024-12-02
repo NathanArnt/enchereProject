@@ -56,14 +56,15 @@ import DatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 export default {
-  name: 'EncheresApp',
+  name: 'EncheresApp', // Nom du composant
   components: {
-    Navbar,
-    DatePicker,
+    Navbar, // Composant de la barre de navigation
+    DatePicker, // Composant de sélection de date
   },
   setup() {
-    const encheres = ref([]);
-    const produits = ref([]);
+    // Utilisation de la composition API de Vue 3
+    const encheres = ref([]); // Référence pour stocker les enchères
+    const produits = ref([]); // Référence pour stocker les produits
     const currentEnchere = ref({
       id: null,
       titre: '',
@@ -71,49 +72,60 @@ export default {
       dateHeureFin: '',
       prixDebut: 0,
       produitId: '',
-    });
+    }); // Référence pour stocker l'enchère courante
 
-    const isEditing = ref(false);
+    const isEditing = ref(false); // Référence pour savoir si on est en mode édition
 
+    // Fonction pour récupérer les enchères
     const fetchEncheres = async () => {
       try {
+        console.log('Fetching enchères...');
         const response = await fetch('/api/encheres');
         if (!response.ok) {
           throw new Error('Erreur lors du chargement des enchères');
         }
         encheres.value = await response.json();
+        console.log('Enchères fetched:', encheres.value);
       } catch (error) {
-        console.error(error);
+        console.error('Fetch enchères error:', error);
       }
     };
 
+    // Fonction pour récupérer les produits
     const fetchProduits = async () => {
       try {
+        console.log('Fetching produits...');
         const response = await fetch('/api/produits');
         if (!response.ok) {
           throw new Error('Erreur lors du chargement des produits');
         }
         produits.value = await response.json();
+        console.log('Produits fetched:', produits.value);
       } catch (error) {
-        console.error(error);
+        console.error('Fetch produits error:', error);
       }
     };
 
+    // Fonction pour récupérer les enchères mises à jour
     const fetchUpdatedEncheres = async () => {
       try {
+        console.log('Fetching updated enchères...');
         const response = await fetch('/api/encheres');
         if (!response.ok) {
           throw new Error('Erreur lors de la mise à jour des enchères');
         }
         const updatedEncheres = await response.json();
         encheres.value = updatedEncheres;
+        console.log('Updated enchères:', encheres.value);
       } catch (error) {
-        console.error(error);
+        console.error('Fetch updated enchères error:', error);
       }
     };
 
+    // Fonction pour sauvegarder une enchère
     const saveEnchere = async () => {
       try {
+        console.log('Saving enchère...');
         let response;
         const enchereToSave = {
           ...currentEnchere.value,
@@ -138,13 +150,16 @@ export default {
 
         await fetchUpdatedEncheres();
         resetForm();
+        console.log('Enchère saved and updated enchères fetched.');
       } catch (error) {
-        console.error(error);
+        console.error('Save enchère error:', error);
       }
     };
 
+    // Fonction pour supprimer une enchère
     const deleteEnchere = async (id) => {
       try {
+        console.log(`Deleting enchère with id ${id}...`);
         const response = await fetch(`/api/encheres/delete/${id}`, {
           method: 'DELETE',
         });
@@ -154,12 +169,15 @@ export default {
         }
 
         await fetchUpdatedEncheres();
+        console.log('Enchère deleted and updated enchères fetched.');
       } catch (error) {
-        console.error(error);
+        console.error('Delete enchère error:', error);
       }
     };
 
+    // Fonction pour éditer une enchère
     const editEnchere = (enchere) => {
+      console.log('Editing enchère:', enchere);
       currentEnchere.value = {
         id: enchere.id,
         titre: enchere.titre,
@@ -171,7 +189,9 @@ export default {
       isEditing.value = true;
     };
 
+    // Fonction pour réinitialiser le formulaire
     const resetForm = () => {
+      console.log('Resetting form...');
       currentEnchere.value = {
         id: null,
         titre: '',
@@ -183,16 +203,20 @@ export default {
       isEditing.value = false;
     };
 
+    // Fonction pour annuler l'édition
     const cancelEdit = () => {
       resetForm();
     };
 
+    // Lifecycle hook monté - appelé lorsque le composant est monté
     onMounted(() => {
-      fetchEncheres();
-      fetchProduits();
+      console.log('Component mounted. Fetching initial data...');
+      fetchEncheres(); // Récupère les enchères initiales
+      fetchProduits(); // Récupère les produits initiales
       setInterval(fetchUpdatedEncheres, 10000); // Mettre à jour toutes les 10 secondes
     });
 
+    // Retourne les variables et fonctions pour être utilisées dans le template
     return {
       encheres,
       produits,
@@ -206,6 +230,7 @@ export default {
   },
 };
 </script>
+
 
 
 
