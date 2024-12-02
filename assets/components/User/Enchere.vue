@@ -66,21 +66,25 @@ export default {
     // Ajouter des logs de débogage avant l'envoi
     const updatePrixEncheri = async () => {
       try {
-        // Validation des données
-        console.log("Tentative de mise à jour du prix enchéri.");
-        if (!updatePrix.value || isNaN(updatePrix.value) || updatePrix.value <= 0) {
-          alert("Veuillez saisir un prix valide (nombre positif).");
-          console.error("Prix invalide :", updatePrix.value);
+
+        const response = await fetch(`/api/participation/update/${participationId.value}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prixEncheri: updatePrix.value }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          alert(`Erreur API : ${errorData.error || "Erreur inconnue"}`);
           return;
         }
 
-        const result = await response.json();
-        console.log("Réponse de l'API :", result);
         alert("Prix enchéri mis à jour avec succès !");
         isBudgetValidated.value = false;
         updatePrix.value = ""; // Réinitialisation du formulaire
       } catch (error) {
-        console.error("Erreur lors de la mise à jour :", error);
         alert("Une erreur s'est produite, vérifiez les logs pour plus d'informations.");
       }
     };

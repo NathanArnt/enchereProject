@@ -120,7 +120,6 @@ class ApiController extends AbstractController
         // Renvoie les enchères sous forme de réponse JSON
         return new JsonResponse($data);
     }
-
     // Ajoute une nouvelle enchère
     #[Route('/api/encheres/add', name: 'app_api_add_enchere', methods: ['POST'])]
     public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse
@@ -309,45 +308,38 @@ class ApiController extends AbstractController
 #[Route('/api/participation/update/{id}', name: 'app_api_update_participation', methods: ['PUT'])]
 public function updatePrixEncheri($id, Request $request, EntityManagerInterface $entityManager)
 {
-    // Récupérer la participation
     $participation = $entityManager->getRepository(Participation::class)->find($id);
     if (!$participation) {
         return new JsonResponse(['error' => 'Participation non trouvée'], Response::HTTP_NOT_FOUND);
     }
 
-    // Récupérer l'enchère associée
     $enchere = $participation->getLaEnchere();
     if (!$enchere) {
         return new JsonResponse(['error' => 'Enchère associée non trouvée'], Response::HTTP_NOT_FOUND);
     }
 
-    // Décoder les données JSON reçues
     $data = json_decode($request->getContent(), true);
-    if (!isset($data['prixEncheri'])) {
-        return new JsonResponse(['error' => 'Le champ "prixEncheri" est manquant'], Response::HTTP_BAD_REQUEST);
+    if (!isset($data['prixEncheri']) || !is_numeric($data['prixEncheri'])) {
+        return new JsonResponse(['error' => 'Le champ "prixEncheri" doit être un nombre valide'], Response::HTTP_BAD_REQUEST);
     }
 
-    // Valider que le prixEncheri est un nombre
-    if (!is_numeric($data['prixEncheri'])) {
-        return new JsonResponse(['error' => 'Le "prixEncheri" doit être un nombre'], Response::HTTP_BAD_REQUEST);
-    }
+    $prixEncheri = (float) $data['prixEncheri'];
 
-    $prixEncheri = (float)$data['prixEncheri'];
-
-    // Validation : le prixEncheri ne peut pas être inférieur au prixDebut
     if ($prixEncheri < $enchere->getPrixDebut()) {
         return new JsonResponse(['error' => 'Le prix enchéri ne peut pas être inférieur au prix de départ'], Response::HTTP_BAD_REQUEST);
     }
 
-    // Mettre à jour le prixEncheri
-    $participation->setPrixEncheri($prixEncheri);
+    $budgetMaximum = $participation->getBudgetMaximum();
+    if ($budgetMaximum && $prixEncheri > $budgetMaximum) {
+        return new JsonResponse(['error' => 'Le prix enchéri dépasse le budget maximum autorisé'], Response::HTTP_BAD_REQUEST);
+    }
 
-    // Mise à jour du prixDebut dans l'enchère associée
+    $participation->setPrixEncheri($prixEncheri);
     $enchere->setPrixDebut($prixEncheri);
     $entityManager->flush();
 
-    // Répondre avec succès
-    return new JsonResponse(['status' => 'Prix enchéri et prixDebut mis à jour avec succès'], Response::HTTP_OK);
+    return new JsonResponse(['status' => 'Prix enchéri mis à jour avec succès'], Response::HTTP_OK);
 }
+
 
 }
