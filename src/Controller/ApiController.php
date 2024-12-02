@@ -11,6 +11,7 @@ use App\Entity\Produit;
 use App\Entity\Enchere;
 use App\Entity\Participation;
 use App\Repository\EnchereRepository;
+use App\Repository\ParticipationRepository;
 use App\Repository\UserRepository;
 use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -223,51 +224,83 @@ class ApiController extends AbstractController
             return 'live'; 
         }
     }
-    #[Route('/api/participation/budgetmax/add', name: 'app_api_add_participation_budget_max', methods: ['POST', 'GET'])]
+    #[Route('/api/participation/budgetmax/add', name: 'app_api_add_participation_budget_max', methods: ['POST'])]
     public function addBudgetMax(
-    EnchereRepository $enchereRepository,
-    Request $request,
-    EntityManagerInterface $entityManager
-): JsonResponse {
-    $util = new Utils();
-
-    $data = json_decode($request->getContent(), true);
-
-    // Récupération de l'utilisateur actuel
-    $user = $this->getUser();
-
-    // Création d'une nouvelle participation
-    $participation = new Participation();
-    $participation->setLeUser($user);
-
-    // Association avec l'enchère correspondante
-    $laEnchere = $enchereRepository->find($data['laEnchere']);
-    if (!$laEnchere) {
-        return new JsonResponse(['error' => 'Enchère non trouvée'], Response::HTTP_NOT_FOUND);
+        EnchereRepository $enchereRepository,
+        ParticipationRepository $participationRepository,
+        Request $request,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $user = $this->getUser();
+    
+        // Vérification des données reçues
+        if (!isset($data['laEnchere']) || !isset($data['budgetMaximum'])) {
+            return new JsonResponse(['error' => 'Les champs "laEnchere" et "budgetMaximum" sont requis'], Response::HTTP_BAD_REQUEST);
+        }
+    
+        // Association avec l'enchère correspondante
+        $laEnchere = $enchereRepository->find($data['laEnchere']);
+        if (!$laEnchere) {
+            return new JsonResponse(['error' => 'Enchère non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+    
+        // Vérification si une participation existe déjà
+        $existingParticipation = $participationRepository->findOneBy(['leUser' => $user, 'laEnchere' => $laEnchere]);
+        if ($existingParticipation) {
+            return new JsonResponse([
+                'error' => 'Un budget maximum a déjà été défini pour cette enchère'
+            ], Response::HTTP_CONFLICT);
+        }
+    
+        // Création de la participation
+        $budgetMaximum = (float) $data['budgetMaximum'];
+        if ($budgetMaximum < $laEnchere->getPrixDebut()) {
+            return new JsonResponse(['error' => 'Le budget maximum ne peut pas être inférieur au prix de départ'], Response::HTTP_BAD_REQUEST);
+        }
+    
+        $participation = new Participation();
+        $participation->setLeUser($user);
+        $participation->setLaEnchere($laEnchere);
+        $participation->setBudgetMaximum($budgetMaximum);
+        $participation->setPrixEncheri(0);
+    
+        $entityManager->persist($participation);
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'id' => $participation->getId(),
+            'budgetMaximum' => $participation->getBudgetMaximum(),
+            'prixEncheri' => $participation->getPrixEncheri()
+        ], Response::HTTP_CREATED);
     }
-    $participation->setLaEnchere($laEnchere);
+    
 
-    // Définition du budget maximum
-    $participation->setBudgetMaximum($data['budgetMaximum']);
-
-    // Vérification et définition du prix encheri
-    $prixEncheri = isset($data['prixEncheri']) ? $data['prixEncheri'] : 0;
-    $participation->setPrixEncheri($prixEncheri);
-
-    // Persistance de la participation
-    $entityManager->persist($participation);
-    $entityManager->flush();
-
-    // Retourner une réponse JSON avec l'ID et d'autres informations
-    return new JsonResponse([
-        'id' => $participation->getId(),
-        'budgetMaximum' => $participation->getBudgetMaximum(),
-        'prixEncheri' => $participation->getPrixEncheri(),
-        'laEnchere' => $participation->getLaEnchere()->getId(), // Optionnel, pour confirmation
-        'leUser' => $participation->getLeUser()->getId() // Optionnel, pour confirmation
-    ], Response::HTTP_CREATED);
-}
-
+    #[Route('/api/participation/{enchereId}', name: 'app_api_get_participation', methods: ['GET'])]
+    public function getParticipation(
+        $enchereId,
+        EnchereRepository $enchereRepository,
+        ParticipationRepository $participationRepository
+    ): JsonResponse {
+        $user = $this->getUser();
+    
+        $laEnchere = $enchereRepository->find($enchereId);
+        if (!$laEnchere) {
+            return new JsonResponse(['error' => 'Enchère non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+    
+        $participation = $participationRepository->findOneBy(['leUser' => $user, 'laEnchere' => $laEnchere]);
+        if (!$participation) {
+            return new JsonResponse(['error' => 'Participation non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+    
+        return new JsonResponse([
+            'id' => $participation->getId(),
+            'budgetMaximum' => $participation->getBudgetMaximum(),
+            'prixEncheri' => $participation->getPrixEncheri()
+        ], Response::HTTP_OK);
+    }
+    
 #[Route('/api/participation/update/{id}', name: 'app_api_update_participation', methods: ['PUT'])]
 public function updatePrixEncheri($id, Request $request, EntityManagerInterface $entityManager)
 {
