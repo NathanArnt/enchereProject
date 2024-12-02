@@ -73,7 +73,6 @@ export default {
           console.error("Prix invalide :", updatePrix.value);
           return;
         }
-        }
 
         const result = await response.json();
         console.log("Réponse de l'API :", result);

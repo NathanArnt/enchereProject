@@ -11,13 +11,13 @@ use App\Entity\Produit;
 use App\Entity\Enchere;
 use App\Entity\Participation;
 use App\Repository\EnchereRepository;
-use App\Repository\UserRepository;
 use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ApiController extends AbstractController
 {
+    // Route principale de l'API
     #[Route('/api', name: 'app_api')]
     public function index(): Response
     {
@@ -26,30 +26,38 @@ class ApiController extends AbstractController
         ]);
     }
 
+    // Récupère la liste des produits
     #[Route('/api/produits', name: 'app_api_produits', methods: ['GET'])]
     public function getProduits(Request $request, ProduitRepository $produitRepository): Response
     {
         $response = new Utils();
+        // Récupère tous les produits de la base de données
         $produits = $produitRepository->findAll();
+        // Renvoie les produits sous forme de réponse JSON
         return $response->GetJsonResponse($request, $produits);
     }
 
+    // Ajoute un nouveau produit
     #[Route('/api/produits/add', name: 'app_api_add_produit', methods: ['POST'])]
     public function addProduit(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
         $produit = new Produit();
+        // Définit les propriétés du produit avec les données reçues
         $produit->setLibelle($data['libelle']);
         $produit->setDescription($data['description']);
         $produit->setPrixPlancher($data['prixPlancher']);
 
+        // Persist et sauvegarde le produit dans la base de données
         $entityManager->persist($produit);
         $entityManager->flush();
 
+        // Renvoie une réponse JSON indiquant que le produit a été ajouté avec succès
         return new JsonResponse(['status' => 'Produit ajouté avec succès'], Response::HTTP_CREATED);
     }
 
+    // Met à jour un produit existant
     #[Route('/api/produits/update/{id}', name: 'app_api_update_produit', methods: ['PUT'])]
     public function updateProduit(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -60,15 +68,19 @@ class ApiController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
+        // Met à jour les propriétés du produit avec les nouvelles données
         $produit->setLibelle($data['libelle']);
         $produit->setDescription($data['description']);
         $produit->setPrixPlancher($data['prixPlancher']);
 
+        // Sauvegarde les modifications dans la base de données
         $entityManager->flush();
 
+        // Renvoie une réponse JSON indiquant que le produit a été mis à jour avec succès
         return new JsonResponse(['status' => 'Produit mis à jour avec succès']);
     }
 
+    // Supprime un produit
     #[Route('/api/produits/delete/{id}', name: 'app_api_delete_produit', methods: ['DELETE'])]
     public function deleteProduit($id, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -78,18 +90,21 @@ class ApiController extends AbstractController
             return new JsonResponse(['status' => 'Produit non trouvé'], 404);
         }
 
+        // Supprime le produit de la base de données
         $entityManager->remove($produit);
         $entityManager->flush();
 
+        // Renvoie une réponse JSON indiquant que le produit a été supprimé avec succès
         return new JsonResponse(['status' => 'Produit supprimé avec succès']);
     }
 
+    // Récupère la liste des enchères
     #[Route('/api/encheres', name: 'api_encheres', methods: ['GET'])]
     public function getEncheres(EnchereRepository $enchereRepository): JsonResponse
     {
         $encheres = $enchereRepository->findAll();
 
-        // Transformez les enchères en tableau adapté pour l'API
+        // Transforme les enchères en tableau adapté pour l'API
         $data = array_map(function ($enchere) {
             return [
                 'id' => $enchere->getId(),
@@ -102,9 +117,11 @@ class ApiController extends AbstractController
             ];
         }, $encheres);
 
+        // Renvoie les enchères sous forme de réponse JSON
         return new JsonResponse($data);
     }
 
+    // Ajoute une nouvelle enchère
     #[Route('/api/encheres/add', name: 'app_api_add_enchere', methods: ['POST'])]
     public function addEnchere(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -119,110 +136,131 @@ class ApiController extends AbstractController
 
         $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
         $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
+        $enchere->setDateHeureFin($dateFin);        
         $enchere->setPrixDebut($data['prixDebut']);
+        // Calcule et définit le statut de l'enchère
         $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
 
+        // Récupère le produit associé à l'enchère
         $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
         if ($produit) {
             $enchere->setLeProduit($produit);
         }
 
+        // Persist et sauvegarde l'enchère dans la base de données
         $entityManager->persist($enchere);
         $entityManager->flush();
 
+        // Renvoie une réponse JSON indiquant que l'enchère a été ajoutée avec succès
         return new JsonResponse(['status' => 'Enchère ajoutée avec succès'], Response::HTTP_CREATED);
     }
 
-    #[Route('/api/encheres/update/{id}', name: 'app_api_update_enchere', methods: ['PUT'])]
-    public function updateEnchere(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
-
-        if (!$enchere) {
-            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
-        }
-
-        $data = json_decode($request->getContent(), true);
-        $enchere->setTitre($data['titre']);
-        $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
-        $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
-        $enchere->setDateHeureDebut($dateDebut);
-
-        $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
-        $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
-        $enchere->setDateHeureFin($dateFin);        
-        $enchere->setPrixDebut($data['prixDebut']);
-        $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
-
-
-        $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
-        if ($produit) {
-            $enchere->setLeProduit($produit);
-        }
-
-        $entityManager->flush();
-
-        return new JsonResponse(['status' => 'Enchère mise à jour avec succès']);
-    }
-
-    #[Route('/api/encheres/update-status/{id}', name: 'app_api_update_enchere_status', methods: ['PUT'])]
-    public function updateEnchereStatus(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
-
-        if (!$enchere) {
-            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
-        }
-
-        $data = json_decode($request->getContent(), true);
-        $enchere->setStatut($data['statut']);
-
-        $entityManager->flush();
-
-        return new JsonResponse(['status' => 'Statut de l\'enchère mis à jour avec succès']);
-    }
-
+        #[Route('/api/encheres/update/{id}', name: 'app_api_update_enchere', methods: ['PUT'])]
+        public function updateEnchere(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
+        {
+            // Récupère l'enchère à partir de la base de données
+            $enchere = $entityManager->getRepository(Enchere::class)->find($id);
     
-    #[Route('/api/encheres/delete/{id}', name: 'app_api_delete_enchere', methods: ['DELETE'])]
-    public function deleteEnchere($id, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $enchere = $entityManager->getRepository(Enchere::class)->find($id);
-
-        if (!$enchere) {
-            return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+            if (!$enchere) {
+                // Si l'enchère n'est pas trouvée, renvoie une réponse JSON avec un message d'erreur
+                return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+            }
+    
+            // Récupère les nouvelles données de la requête
+            $data = json_decode($request->getContent(), true);
+            // Met à jour les propriétés de l'enchère avec les nouvelles données
+            $enchere->setTitre($data['titre']);
+            $dateDebut = new \DateTime($data['dateHeureDebut'], new \DateTimeZone('UTC'));
+            $dateDebut->setTimezone(new \DateTimeZone('Europe/Paris'));
+            $enchere->setDateHeureDebut($dateDebut);
+    
+            $dateFin = new \DateTime($data['dateHeureFin'], new \DateTimeZone('UTC'));
+            $dateFin->setTimezone(new \DateTimeZone('Europe/Paris'));
+            $enchere->setDateHeureFin($dateFin);        
+            $enchere->setPrixDebut($data['prixDebut']);
+            // Calcule et met à jour le statut de l'enchère
+            $enchere->setStatut($this->calculateStatus($dateDebut, $dateFin));
+    
+            // Récupère le produit associé à l'enchère
+            $produit = $entityManager->getRepository(Produit::class)->find($data['produitId']);
+            if ($produit) {
+                $enchere->setLeProduit($produit);
+            }
+    
+            // Sauvegarde les modifications dans la base de données
+            $entityManager->flush();
+    
+            // Renvoie une réponse JSON indiquant que l'enchère a été mise à jour avec succès
+            return new JsonResponse(['status' => 'Enchère mise à jour avec succès']);
         }
-
-        $entityManager->remove($enchere);
-        $entityManager->flush();
-
-        return new JsonResponse(['status' => 'Enchère supprimée avec succès']);
-    }
-    #[Route('/api/encheresuser', name: 'app_api_encheres_user')]
-    public function getEncheresUser(Request $request, EnchereRepository $enchereRepository): Response
-    {
-        $response =new Utils();
-        $encheres = $enchereRepository->findAll();
-        return $response->GetJsonResponse($request,$encheres);
-    }   
-
-
-    // Ajoutez cette méthode privée pour calculer le statut de l'enchère 
-    private function calculateStatus(\DateTime $dateHeureDebut, \DateTime $dateHeureFin): string 
-    { 
-        $now = new \DateTime(); 
-        if ($now < $dateHeureDebut) 
-        { 
-            return 'incoming'; 
-        } 
-        elseif ($now > $dateHeureFin) 
-        { 
-            return 'over'; 
-        } 
-        else 
-        { 
-            return 'live'; 
+    
+        // Met à jour le statut d'une enchère
+        #[Route('/api/encheres/update-status/{id}', name: 'app_api_update_enchere_status', methods: ['PUT'])]
+        public function updateEnchereStatus(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse
+        {
+            // Récupère l'enchère à partir de la base de données
+            $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+    
+            if (!$enchere) {
+                // Si l'enchère n'est pas trouvée, renvoie une réponse JSON avec un message d'erreur
+                return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+            }
+    
+            // Récupère le nouveau statut de la requête
+            $data = json_decode($request->getContent(), true);
+            $enchere->setStatut($data['statut']);
+    
+            // Sauvegarde les modifications dans la base de données
+            $entityManager->flush();
+    
+            // Renvoie une réponse JSON indiquant que le statut de l'enchère a été mis à jour avec succès
+            return new JsonResponse(['status' => 'Statut de l\'enchère mis à jour avec succès']);
         }
-    }
+    
+        // Supprime une enchère
+        #[Route('/api/encheres/delete/{id}', name: 'app_api_delete_enchere', methods: ['DELETE'])]
+        public function deleteEnchere($id, EntityManagerInterface $entityManager): JsonResponse
+        {
+            // Récupère l'enchère à partir de la base de données
+            $enchere = $entityManager->getRepository(Enchere::class)->find($id);
+    
+            if (!$enchere) {
+                // Si l'enchère n'est pas trouvée, renvoie une réponse JSON avec un message d'erreur
+                return new JsonResponse(['status' => 'Enchère non trouvée'], 404);
+            }
+    
+            // Supprime l'enchère de la base de données
+            $entityManager->remove($enchere);
+            $entityManager->flush();
+    
+            // Renvoie une réponse JSON indiquant que l'enchère a été supprimée avec succès
+            return new JsonResponse(['status' => 'Enchère supprimée avec succès']);
+        }
+    
+        // Récupère les enchères pour un utilisateur spécifique
+        #[Route('/api/encheresuser', name: 'app_api_encheres_user')]
+        public function getEncheresUser(Request $request, EnchereRepository $enchereRepository): Response
+        {
+            $response = new Utils();
+            // Récupère toutes les enchères de la base de données
+            $encheres = $enchereRepository->findAll();
+            // Renvoie les enchères sous forme de réponse JSON
+            return $response->GetJsonResponse($request, $encheres);
+        }
+    
+        // Méthode privée pour calculer le statut de l'enchère
+        private function calculateStatus(\DateTime $dateHeureDebut, \DateTime $dateHeureFin): string 
+        {
+            $now = new \DateTime();
+            if ($now < $dateHeureDebut) {
+                return 'incoming'; 
+            } elseif ($now > $dateHeureFin) { 
+                return 'over';
+            } else {
+                return 'live';
+            }
+        }
+    
     #[Route('/api/participation/budgetmax/add', name: 'app_api_add_participation_budget_max', methods: ['POST', 'GET'])]
     public function addBudgetMax(
     EnchereRepository $enchereRepository,
