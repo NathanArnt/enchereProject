@@ -5,9 +5,6 @@
       <div class="enchereContainer">
         <div class="card" v-for="enchere in incomingEncheres" :key="enchere.id">
           <div class="card-body">
-            <div class="img">
-              <img src="" alt="img-produit" />
-            </div>
             <div class="body">
               <div class="head">
                 <div>{{ enchere.leProduit.libelle }}</div>
@@ -48,9 +45,6 @@
       <div class="enchereContainer">
         <div class="card" v-for="enchere in liveEncheres" :key="enchere.id">
           <div class="card-body">
-            <div class="img">
-              <img src="" alt="img-produit" />
-            </div>
             <div class="body">
               <div class="head">
                 <div>{{ enchere.leProduit.libelle }}</div>
@@ -103,9 +97,6 @@
       <div class="enchereContainer">
         <div class="card" v-for="enchere in overEncheres" :key="enchere.id">
           <div class="card-body">
-            <div class="img">
-              <img src="" alt="img-produit" />
-            </div>
             <div class="body">
               <div class="head">
                 <div>{{ enchere.leProduit.libelle }}</div>
