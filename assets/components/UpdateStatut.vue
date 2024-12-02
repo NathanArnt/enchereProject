@@ -58,7 +58,7 @@ export default {
 
     onMounted(() => {
       fetchEncheres();
-      setInterval(updateEnchereStatus, 60000); // Mise à jour toutes les minutes
+      setInterval(updateEnchereStatus, 10000); // Mise à jour toutes les 10 secondes
     });
 
     return {};
