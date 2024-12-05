@@ -38,7 +38,7 @@ class ApiController extends AbstractController
         // Renvoie les produits sous forme de réponse JSON
         return $response->GetJsonResponse($request, $produits);
     }
-
+    
     // Ajoute un nouveau produit
     #[Route('/api/produits/add', name: 'app_api_add_produit', methods: ['POST'])]
     public function addProduit(Request $request, EntityManagerInterface $entityManager): JsonResponse
@@ -373,6 +373,4 @@ public function updatePrixEncheri($id, Request $request, EntityManagerInterface 
 
     return new JsonResponse(['status' => 'Prix enchéri mis à jour avec succès'], Response::HTTP_OK);
 }
-
-
 }

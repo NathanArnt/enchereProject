@@ -39,7 +39,7 @@
         </div>
       </div>
     </section>
-    
+
     <section class="live-section">
       <h2>Enchères en cours</h2>
       <div class="enchereContainer">
@@ -91,7 +91,7 @@
         </div>
       </div>
     </section>
-    
+
     <section class="over-section">
       <h2>Enchères terminées</h2>
       <div class="enchereContainer">
@@ -104,40 +104,8 @@
               </div>
               <div class="desc">Description : {{ enchere.leProduit.description }}</div>
               <div class="statut">
-                <div>{{ enchere.statut }}</div>
-                <button 
-                  @click="toggleParticipation(enchere)" 
-                  :disabled="isAuctionClosed(enchere)"
-                  :class="{'btn-terminated': isAuctionClosed(enchere), 'btn-participate': !isAuctionClosed(enchere)}"
-                >
-                  {{ isAuctionClosed(enchere) ? "Enchère terminée" : "Gérer ma Participation" }}
-                </button>
+                <div>{{ enchere.statut }} - {{ enchere.isConcluded ? "Conclue" : "Non conclue" }}</div>
               </div>
-            </div>
-          </div>
-          <div v-if="selectedEnchere && selectedEnchere.id === enchere.id" class="participation-form">
-            <div class="budget" v-if="isClicked">
-              <!-- Formulaire pour définir le budget maximum -->
-              <form @submit.prevent="addBudgetMax">
-                <h3>Définir un Budget Maximum</h3>
-                <input v-model="newBudgetMax" placeholder="Saisir le budget maximum" required />
-                <div class="button-group">
-                  <button type="submit" class="btn-success">Valider</button>
-                  <button type="button" class="btn-secondary" @click="isClicked = false">Annuler</button>
-                </div>
-              </form>
-            </div>
-
-            <div class="prixEncheri" v-if="isBudgetValidated">
-              <!-- Formulaire pour mettre à jour le prix enchéri -->
-              <form @submit.prevent="updatePrixEncheri">
-                <h3>Mettre à jour le Prix Enchéri</h3>
-                <input v-model="updatePrix" placeholder="Saisir le prix enchéri" required />
-                <div class="button-group">
-                  <button type="submit" class="btn-success">Valider</button>
-                  <button type="button" class="btn-secondary" @click="isBudgetValidated = false">Annuler</button>
-                </div>
-              </form>
             </div>
           </div>
         </div>
@@ -152,28 +120,28 @@ import { ref, onMounted } from "vue";
 export default {
   name: "EnchereApp",
   setup() {
-    // État
-    const encheres = ref([]); // Liste des enchères
-    const newBudgetMax = ref(""); // Budget maximum à définir
-    const isClicked = ref(false); // Affichage du formulaire de budget
-    const selectedEnchere = ref(null); // Enchère sélectionnée pour interaction
-    const selectedParticipation = ref(null); // Participation existante de l'utilisateur
-    const updatePrix = ref(""); // Prix enchéri saisi
-    const isBudgetValidated = ref(false); // Affichage du formulaire de mise à jour de l'enchère
-
-    // Filtrer les enchères en fonction de leur statut
+    const encheres = ref([]);
     const incomingEncheres = ref([]);
     const liveEncheres = ref([]);
     const overEncheres = ref([]);
 
-    // Vérifie si l'enchère est clôturée
+    const newBudgetMax = ref("");
+    const isClicked = ref(false);
+    const selectedEnchere = ref(null);
+    const selectedParticipation = ref(null);
+    const updatePrix = ref("");
+    const isBudgetValidated = ref(false);
+
     const isAuctionClosed = (enchere) => {
       const now = new Date();
       const endDate = new Date(enchere.dateHeureFin);
       return now > endDate;
     };
 
-    // Fonction pour afficher le formulaire selon la participation
+    const evaluateAuctionOutcome = (enchere) => {
+      enchere.isConcluded = enchere.prixDebut >= enchere.leProduit.prixPlancher;
+    };
+
     const toggleParticipation = async (enchere) => {
       if (isAuctionClosed(enchere)) {
         alert("Cette enchère est terminée.");
@@ -183,15 +151,14 @@ export default {
       selectedEnchere.value = enchere;
 
       try {
-        // Vérification de la participation existante
         const response = await fetch(`/api/participation/${enchere.id}`);
         if (response.ok) {
           selectedParticipation.value = await response.json();
-          isBudgetValidated.value = true; // Peut enchérir directement
+          isBudgetValidated.value = true;
           isClicked.value = false;
         } else if (response.status === 404) {
           selectedParticipation.value = null;
-          isClicked.value = true; // Doit définir un budget maximum
+          isClicked.value = true;
           isBudgetValidated.value = false;
         } else {
           throw new Error("Erreur lors de la vérification de la participation");
@@ -202,7 +169,6 @@ export default {
       }
     };
 
-    // Fonction pour ajouter un budget maximum
     const addBudgetMax = async () => {
       try {
         const payload = {
@@ -224,16 +190,15 @@ export default {
 
         const result = await response.json();
         alert("Budget maximum ajouté avec succès !");
-        selectedParticipation.value = result; // Stocker la participation créée
-        isClicked.value = false; // Masquer le formulaire
-        newBudgetMax.value = ""; // Réinitialiser le champ
+        selectedParticipation.value = result;
+        isClicked.value = false;
+        newBudgetMax.value = "";
       } catch (error) {
         console.error("Erreur :", error);
         alert("Une erreur s'est produite lors de l'ajout du budget maximum.");
       }
     };
 
-    // Fonction pour mettre à jour le prix enchéri
     const updatePrixEncheri = async () => {
       if (!selectedParticipation.value) {
         alert("Aucune participation existante pour cette enchère !");
@@ -256,15 +221,14 @@ export default {
         }
 
         alert("Prix enchéri mis à jour avec succès !");
-        updatePrix.value = ""; // Réinitialiser le champ
-        isBudgetValidated.value = false; // Masquer le formulaire
+        updatePrix.value = "";
+        isBudgetValidated.value = false;
       } catch (error) {
         console.error("Erreur :", error);
         alert("Une erreur s'est produite lors de la mise à jour du prix enchéri.");
       }
     };
 
-    // Charger les enchères depuis l'API
     const fetchEnchere = async () => {
       try {
         const response = await fetch("/api/encheresuser");
@@ -273,22 +237,29 @@ export default {
         }
         encheres.value = await response.json();
 
-        // Filtrer les enchères en fonction de leur statut
-        incomingEncheres.value = encheres.value.filter(enchere => enchere.statut === 'incoming');
-        liveEncheres.value = encheres.value.filter(enchere => enchere.statut === 'live');
-        overEncheres.value = encheres.value.filter(enchere => enchere.statut === 'over');
+        incomingEncheres.value = encheres.value.filter((enchere) => enchere.statut === "incoming");
+        liveEncheres.value = encheres.value.filter((enchere) => enchere.statut === "live");
+        overEncheres.value = encheres.value.filter((enchere) => {
+          if (enchere.statut === "over") {
+            evaluateAuctionOutcome(enchere);
+            return true;
+          }
+          return false;
+        });
       } catch (error) {
         console.error("Erreur lors du chargement des enchères :", error);
       }
     };
 
-    // Charger les données au montage du composant
     onMounted(() => {
       fetchEnchere();
     });
 
     return {
       encheres,
+      incomingEncheres,
+      liveEncheres,
+      overEncheres,
       newBudgetMax,
       isClicked,
       selectedEnchere,
@@ -298,14 +269,10 @@ export default {
       isBudgetValidated,
       updatePrix,
       isAuctionClosed,
-      incomingEncheres,
-      liveEncheres,
-      overEncheres,
     };
   },
 };
 </script>
-
 
 <style scoped>
 /* Style global de la page */
