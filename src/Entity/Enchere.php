@@ -40,6 +40,9 @@ class Enchere
     #[ORM\OneToOne(inversedBy: 'laEnchere', cascade: ['persist', 'remove'])]
     private ?Produit $leProduit = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $gagnant = null;
+
 
 
 
@@ -150,6 +153,18 @@ class Enchere
     public function setLeProduit(?Produit $leProduit): static
     {
         $this->leProduit = $leProduit;
+
+        return $this;
+    }
+
+    public function getGagnant(): ?string
+    {
+        return $this->gagnant;
+    }
+
+    public function setGagnant(?string $gagnant): static
+    {
+        $this->gagnant = $gagnant;
 
         return $this;
     }
