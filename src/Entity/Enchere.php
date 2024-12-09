@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Id;
 
 #[ORM\Entity(repositoryClass: EnchereRepository::class)]
 class Enchere
@@ -40,10 +41,8 @@ class Enchere
     #[ORM\OneToOne(inversedBy: 'laEnchere', cascade: ['persist', 'remove'])]
     private ?Produit $leProduit = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $gagnant = null;
-
-
+    #[ORM\Column(nullable: true)]
+    private ?int $gagnantId = null;
 
 
     public function __construct()
@@ -157,17 +156,15 @@ class Enchere
         return $this;
     }
 
-    public function getGagnant(): ?string
+    public function getGagnantId(): ?int
     {
-        return $this->gagnant;
+        return $this->gagnantId;
     }
 
-    public function setGagnant(?string $gagnant): static
+    public function setGagnantId(?int $gagnantId): static
     {
-        $this->gagnant = $gagnant;
+        $this->gagnantId = $gagnantId;
 
         return $this;
     }
-
-
 }

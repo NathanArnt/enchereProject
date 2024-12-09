@@ -373,4 +373,62 @@ public function updatePrixEncheri($id, Request $request, EntityManagerInterface 
 
     return new JsonResponse(['status' => 'Prix enchéri mis à jour avec succès'], Response::HTTP_OK);
 }
+
+// Détermine le gagnant d'une enchère via la dernière participation
+// Détermine le gagnant d'une enchère via la dernière participation
+// Détermine le gagnant d'une enchère via la dernière participation
+#[Route('/api/encheres/winner/{id}', name: 'app_api_terminer_enchere', methods: ['POST', 'GET'])]
+public function winnerId(Enchere $enchere, ParticipationRepository $participationRepository, EntityManagerInterface $em): JsonResponse
+{
+    // Vérifie si l'enchère est terminée
+    if ($enchere->getStatut() !== 'over') {
+        return new JsonResponse(['error' => 'L\'enchère n\'est pas encore terminée'], Response::HTTP_BAD_REQUEST);
+    }
+
+    // Vérifie si l'enchère est concluante (si le prix de l'enchère dépasse le prix plancher)
+    if ($enchere->getPrixDebut() < $enchere->getLeProduit()->getPrixPlancher()) {
+        return new JsonResponse(['error' => 'L\'enchère n\'a pas atteint le prix plancher'], Response::HTTP_BAD_REQUEST);
+    }
+
+    // Trouve la dernière participation pour cette enchère
+    $participations = $participationRepository->findBy(
+        ['laEnchere' => $enchere], 
+        ['id' => 'DESC'] // Trie par ID décroissant pour obtenir la dernière participation
+    );
+
+    if (empty($participations)) {
+        return new JsonResponse(['message' => 'Aucune participation pour cette enchère'], Response::HTTP_OK);
+    }
+
+    // Récupère la dernière participation (la première dans le tableau trié)
+    $lastParticipation = $participations[0];
+
+    // Vérifie si le prix enchéri de la dernière participation est supérieur au prix de départ
+    if ($lastParticipation->getPrixEncheri() < $enchere->getPrixDebut()) {
+        return new JsonResponse(['error' => 'Le prix enchéri de la dernière participation est inférieur au prix de départ'], Response::HTTP_BAD_REQUEST);
+    }
+
+    // Assigner le gagnant à l'attribut gagnantId de l'enchère en utilisant l'ID de l'utilisateur
+    $enchere->setGagnantId($lastParticipation->getLeUser()->getId()); // Assigne l'ID du User gagnant
+
+    // Sauvegarder les modifications de l'enchère
+    $em->flush(); // Persiste les modifications
+
+    // Renvoie les détails du gagnant (la dernière participation)
+    return new JsonResponse([
+        'message' => 'Le gagnant a été déterminé et enregistré avec succès.',
+        'gagnant' => [
+            'id' => $lastParticipation->getLeUser()->getId(),
+            'nom' => $lastParticipation->getLeUser()->getNom(),
+            'prenom' => $lastParticipation->getLeUser()->getPrenom(),
+        ],
+        'prixEncheri' => $lastParticipation->getPrixEncheri(),
+    ], Response::HTTP_OK);
+}
+
+
+
+
+
+
 }
