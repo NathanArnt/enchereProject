@@ -52,7 +52,7 @@
               </div>
               <div class="desc">Description : {{ enchere.leProduit.description }}</div>
               <div class="statut">
-                <div>{{ enchere.statut }}</div>
+                <div>Temps restant : {{ calculateRemainingTime(enchere.dateHeureFin) }}</div>
                 <button 
                   @click="toggleParticipation(enchere)" 
                   :disabled="isAuctionClosed(enchere)"
@@ -91,6 +91,7 @@
         </div>
       </div>
     </section>
+
 
     <section class="over-section">
       <h2>Enchères terminées</h2>
@@ -131,6 +132,19 @@ export default {
     const selectedParticipation = ref(null);
     const updatePrix = ref("");
     const isBudgetValidated = ref(false);
+
+    const calculateRemainingTime = (endDate) => {
+      const now = new Date();
+      const end = new Date(endDate);
+      const diff = end - now;
+      if (diff <= 0) return "Terminé";
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours}h ${minutes}m ${seconds}s`;
+    };
 
     const isAuctionClosed = (enchere) => {
       const now = new Date();
@@ -253,6 +267,9 @@ export default {
 
     onMounted(() => {
       fetchEnchere();
+      setInterval(() => {
+        liveEncheres.value = [...liveEncheres.value]; // Force le rendu des enchères en cours
+      }, 100);
     });
 
     return {
@@ -269,10 +286,12 @@ export default {
       isBudgetValidated,
       updatePrix,
       isAuctionClosed,
+      calculateRemainingTime,
     };
   },
 };
 </script>
+
 
 <style scoped>
 /* Style global de la page */
@@ -296,7 +315,7 @@ export default {
 
 /* Style de chaque carte */
 .card {
-  width: 350px;
+  width: 400px;
   border: none;
   border-radius: 15px;
   overflow: hidden;
