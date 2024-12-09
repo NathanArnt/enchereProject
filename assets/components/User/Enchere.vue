@@ -94,24 +94,33 @@
 
 
     <section class="over-section">
-      <h2>Enchères terminées</h2>
-      <div class="enchereContainer">
-        <div class="card" v-for="enchere in overEncheres" :key="enchere.id">
-          <div class="card-body">
-            <div class="body">
-              <div class="head">
-                <div>{{ enchere.leProduit.libelle }}</div>
-                <div>{{ enchere.prixDebut }} €</div>
-              </div>
-              <div class="desc">Description : {{ enchere.leProduit.description }}</div>
-              <div class="statut">
-                <div>{{ enchere.statut }} - {{ enchere.isConcluded ? "Conclue" : "Non conclue" }}</div>
-              </div>
-            </div>
+  <h2>Enchères terminées</h2>
+  <div class="enchereContainer">
+    <div class="card" v-for="enchere in overEncheres" :key="enchere.id">
+      <div class="card-body">
+        <div class="body">
+          <div class="head">
+            <div>{{ enchere.leProduit.libelle }}</div>
+            <div>{{ enchere.prixDebut }} €</div>
+          </div>
+          <div class="desc">Description : {{ enchere.leProduit.description }}</div>
+          <div class="statut">
+            <div>{{ enchere.statut }} - {{ enchere.isConcluded ? "Conclue" : "Non conclue" }}</div>
+          </div>
+          <button class="btn-winner" @click="fetchWinner(enchere)" v-if="enchere.isConcluded && !enchere.winner">
+            Voir le gagnant
+          </button>
+          <div v-if="enchere.winner" class="winner-details">
+            <h3>Informations du Gagnant :</h3>
+            <p><strong>Nom :</strong> {{ enchere.winner.nom }}</p>
+            <p><strong>Prenom :</strong> {{ enchere.winner.prenom }}</p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
+
   </div>
 </template>
 
@@ -145,6 +154,23 @@ export default {
 
       return `${hours}h ${minutes}m ${seconds}s`;
     };
+
+    const fetchWinner = async (enchere) => {
+  try {
+    const response = await fetch(`/api/encheres/winner/${enchere.id}`);
+    if (!response.ok) {
+      throw new Error("Erreur lors de la récupération des informations du gagnant.");
+    }
+    const result = await response.json();
+    enchere.winner = result.gagnant; // Assigne directement l'objet gagnant
+  } catch (error) {
+    console.error("Erreur :", error);
+    alert("Impossible de récupérer les informations du gagnant.");
+  }
+};
+
+
+
 
     const isAuctionClosed = (enchere) => {
       const now = new Date();
@@ -286,6 +312,7 @@ export default {
       isBudgetValidated,
       updatePrix,
       isAuctionClosed,
+      fetchWinner,
       calculateRemainingTime,
     };
   },
@@ -303,6 +330,44 @@ export default {
   flex-direction: column;
   align-items: center;
 }
+/* Style du bouton pour afficher le gagnant */
+.btn-winner {
+  background-color: transparent; /* Vert agréable */
+  color: green;
+  border: 1px solid green;
+  margin: 15px 0px 5px;
+  max-width: 150px;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s, color 0.3s;
+}
+
+.btn-winner:hover {
+  color: white;
+  background-color: green; /* Un vert légèrement plus foncé au survol */
+  transform: scale(1.05); /* Légère augmentation de la taille au survol */
+}
+
+.btn-winner:focus {
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 128, 0, 0.5); /* Ombre légère pour la mise au point */
+}
+
+.btn-winner:disabled {
+  background-color: #ccc; /* Grisé si le bouton */
+}
+.winner-details {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
 
 /* Conteneur des enchères */
 .enchereContainer {
@@ -315,7 +380,8 @@ export default {
 
 /* Style de chaque carte */
 .card {
-  width: 400px;
+  min-width: 400px;
+  height: 100%;
   border: none;
   border-radius: 15px;
   overflow: hidden;
@@ -363,7 +429,7 @@ export default {
 .body .statut button {
   padding: 10px 15px;
   border: none;
-  border-radius: 25px;
+  border-radius: 5px;
   background: #007bff;
   color: white;
   cursor: pointer;
@@ -400,6 +466,7 @@ export default {
   border-radius: 15px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   width: 300px;
+  margin: auto;
 }
 
 .budget h3, .prixEncheri h3 {
@@ -465,8 +532,9 @@ export default {
 .participation-form {
   background: #f9f9f9;
   padding: 20px;
-  border-radius: 15px;
+  border-radius: 5px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-top: 10px;
+  font-weight: 100;
 }
 </style>
